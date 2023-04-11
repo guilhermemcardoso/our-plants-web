@@ -54,7 +54,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (
 ) => {
   const { token } = context.params as Params
   const res = await fetch(
-    `${process.env.API_URL}/auth/email-confirmation?token=${token}`
+    `${process.env.NEXT_PUBLIC_API_URL}/auth/email-confirmation?token=${token}`
   )
 
   const { error } = await res.json()
