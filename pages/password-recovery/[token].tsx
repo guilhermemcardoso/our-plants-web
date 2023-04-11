@@ -24,6 +24,7 @@ interface Params extends ParsedUrlQuery {
 
 export default function PasswordRecovery({ canProceed, token }: Props) {
   const [result, setResult] = useState<'none' | 'error' | 'success'>('none')
+  const [isLoading, setIsLoading] = useState(false)
   const [password, setPassword] = useState('')
   const [repassword, setRepassword] = useState('')
   const [errors, setErrors] = useState<{
@@ -43,7 +44,7 @@ export default function PasswordRecovery({ canProceed, token }: Props) {
         'A senha deve ter no mínimo 8 caracteres e possuir ao menos um caracter minúsculo, um caracter maiúsculo e um número'
     }
 
-    if (newErrors.repassword.length === 0 || password !== repassword) {
+    if (newErrors.repassword.length === 0 && password !== repassword) {
       newErrors.repassword = 'Senha e confirmação de senha precisam ser iguais'
     }
 
@@ -53,21 +54,27 @@ export default function PasswordRecovery({ canProceed, token }: Props) {
       return
     }
 
-    const res = await fetch(`${process.env.API_URL}/auth/password-recovery`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ token: token, password: password }),
-    })
+    try {
+      setIsLoading(true)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/password-recovery`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: token, password: password }),
+      })
 
-    const { error } = await res.json()
-    if (error) {
-      setResult('error')
-    }
+      const { error } = await res.json()
+      if (error) {
+        setResult('error')
+      }
 
-    if (!error) {
-      setResult('success')
+      if (!error) {
+        setResult('success')
+      }
+      setIsLoading(false)
+    } catch (error) {
+      setIsLoading(false)
     }
   }
 
@@ -114,6 +121,19 @@ export default function PasswordRecovery({ canProceed, token }: Props) {
             className="mt-8"
           />
           <Button title="CONFIRMAR" onClick={onSubmit} className="mt-10" />
+          {result === 'error' && (
+            <MessageContainer
+              type="error"
+              description="Não foi possível concluir esta ação agora, tente novamente mais tarde."
+              className="mt-10"
+            />
+          )}
+          {result === 'success' && (
+            <MessageContainer
+              description="Senha alterada com sucesso."
+              className="mt-10"
+            />
+          )}
         </div>
       ) : (
         <MessageContainer
@@ -131,7 +151,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (
 ) => {
   const { token } = context.params as Params
   const res = await fetch(
-    `${process.env.API_URL}/auth/validate-password-recovery-token?token=${token}`
+    `${process.env.NEXT_PUBLIC_API_URL}/auth/validate-password-recovery-token?token=${token}`
   )
 
   const { error } = await res.json()
