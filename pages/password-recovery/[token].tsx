@@ -5,6 +5,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 interface Props {
   canProceed: boolean
+  token: string
 }
 
 import { ParsedUrlQuery } from 'querystring'
@@ -21,17 +22,17 @@ interface Params extends ParsedUrlQuery {
   token: string
 }
 
-export default function PasswordRecovery({ canProceed }: Props) {
+export default function PasswordRecovery({ canProceed, token }: Props) {
+  const [result, setResult] = useState<'none' | 'error' | 'success'>('none')
   const [password, setPassword] = useState('')
   const [repassword, setRepassword] = useState('')
   const [errors, setErrors] = useState<{
     password: string
     repassword: string
   }>({ password: '', repassword: '' })
-  const onSubmit = () => {
-    const newErrors = {
-      ...errors,
-    }
+  const onSubmit = async () => {
+    const newErrors = { password: '', repassword: '' }
+
     if (password.length < 8 || !password.match(passwordRegex)) {
       newErrors.password =
         'A senha deve ter no mínimo 8 caracteres e possuir ao menos um caracter minúsculo, um caracter maiúsculo e um número'
@@ -42,7 +43,32 @@ export default function PasswordRecovery({ canProceed }: Props) {
         'A senha deve ter no mínimo 8 caracteres e possuir ao menos um caracter minúsculo, um caracter maiúsculo e um número'
     }
 
+    if (newErrors.repassword.length === 0 || password !== repassword) {
+      newErrors.repassword = 'Senha e confirmação de senha precisam ser iguais'
+    }
+
     setErrors(newErrors)
+
+    if (newErrors.password.length > 0 || newErrors.repassword.length > 0) {
+      return
+    }
+
+    const res = await fetch(`${process.env.API_URL}/auth/password-recovery`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token: token, password: password }),
+    })
+
+    const { error } = await res.json()
+    if (error) {
+      setResult('error')
+    }
+
+    if (!error) {
+      setResult('success')
+    }
   }
 
   const onPasswordChange = (value: string) => {
@@ -110,5 +136,5 @@ export const getServerSideProps: GetServerSideProps<Props> = async (
 
   const { error } = await res.json()
 
-  return { props: { canProceed: !error } }
+  return { props: { canProceed: !error, token } }
 }
