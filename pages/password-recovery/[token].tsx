@@ -90,10 +90,10 @@ export default function PasswordRecovery({ canProceed, token }: Props) {
     <Container>
       <div className="flex flex-row sm:flex-col items-center justify-center w-full">
         <Image
-          src="/logo.png"
+          src="/nossas_plantas_logo.png"
           alt="Nossas plantas logo"
           priority
-          width={100}
+          width={90}
           height={90}
           className="mb-5 w-auto h-20 sm:w-auto sm:h-24 self-center"
         />
